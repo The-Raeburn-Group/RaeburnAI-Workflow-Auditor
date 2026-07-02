@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import type { ChangeEvent } from 'react';
 import type { AuditResult } from '@/lib/types';
 import { formatCurrency, formatHours } from '@/lib/format';
 
@@ -17,8 +18,38 @@ export function AuditorForm() {
   const [text, setText] = useState(sample);
   const [hourlyRate, setHourlyRate] = useState(35);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [sourceName, setSourceName] = useState<string | null>(null);
   const [result, setResult] = useState<AuditResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await fetch('/api/upload', { method: 'POST', body: formData });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || 'Upload failed');
+      }
+
+      const parsed = await response.json();
+      setText(parsed.text);
+      setSourceName(parsed.filename);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown upload error');
+    } finally {
+      setIsUploading(false);
+      event.target.value = '';
+    }
+  }
 
   async function runAudit() {
     setIsLoading(true);
@@ -47,6 +78,23 @@ export function AuditorForm() {
 
   return (
     <div className="w-full flex-1 rounded-3xl border border-white/10 bg-white/[0.06] p-6 shadow-2xl shadow-cyan-950/30 backdrop-blur">
+      <div className="mb-4 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4">
+        <label className="block text-sm font-medium text-cyan-100" htmlFor="upload">
+          Upload PDF, DOCX, CSV, TXT or Markdown
+        </label>
+        <input
+          id="upload"
+          type="file"
+          accept=".pdf,.docx,.csv,.txt,.md,text/plain,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          onChange={handleUpload}
+          disabled={isUploading}
+          className="mt-3 block w-full text-sm text-slate-300 file:mr-4 file:rounded-xl file:border-0 file:bg-cyan-300 file:px-4 file:py-2 file:font-semibold file:text-slate-950 hover:file:bg-cyan-200 disabled:opacity-50"
+        />
+        <p className="mt-2 text-xs text-slate-400">
+          {isUploading ? 'Parsing document…' : sourceName ? `Loaded: ${sourceName}` : 'Files are parsed in memory and copied into the audit text box.'}
+        </p>
+      </div>
+
       <label className="text-sm font-medium text-slate-200" htmlFor="workflow">
         Paste workflow, SOP, org chart notes or process document text
       </label>
