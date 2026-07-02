@@ -2,20 +2,15 @@
 
 ## Auth model
 
-Saved audit APIs use an upstream-authenticated user context passed through the `x-raeburn-user` header. The header value is base64url-encoded JSON.
+RaeburnAI Workflow Auditor now includes first-party workspace authentication:
 
-Example decoded payload:
+- `POST /api/auth/register` creates an organisation and owner account.
+- `POST /api/auth/login` verifies email and password credentials.
+- `POST /api/auth/logout` clears the session cookie.
+- `GET /api/auth/session` returns the current signed-in user.
+- `/auth` provides the login and registration UI.
 
-```json
-{
-  "id": "00000000-0000-4000-8000-000000000101",
-  "email": "owner@example.com",
-  "organisationId": "00000000-0000-4000-8000-000000000001",
-  "role": "owner"
-}
-```
-
-This is designed as an integration seam for Auth.js, Clerk, enterprise SSO or an API gateway. It avoids shipping a weak demo password system while still giving production APIs a real RBAC boundary.
+Passwords are hashed with bcrypt. Sessions are signed JWTs stored in HTTP-only cookies using `AUTH_SECRET`.
 
 ## Roles
 
@@ -26,15 +21,27 @@ This is designed as an integration seam for Auth.js, Clerk, enterprise SSO or an
 | `auditor` | Create and read audits. |
 | `viewer` | Read audits only. |
 
+Saved audit APIs enforce role checks server-side and scope all reads/writes to the signed-in user's organisation.
+
 ## Database setup
 
 ```bash
 createdb raeburnai_workflow_auditor
-psql "$DATABASE_URL" -f db/schema.sql
-psql "$DATABASE_URL" -f db/seed.sql
+npm run db:migrate
+npm run db:seed
 ```
 
-Docker Compose applies `db/schema.sql` automatically on first database initialisation. Apply `db/seed.sql` manually if you want demo users.
+Docker Compose applies `db/schema.sql` automatically on first database initialisation. For repeatable production upgrades, use `npm run db:migrate`.
+
+## Demo users
+
+After `npm run db:seed`, these demo users are available with password `ChangeMeSecurely123!`:
+
+- `owner@example.com`
+- `auditor@example.com`
+- `viewer@example.com`
+
+Change or remove demo users before production deployment.
 
 ## Saved audit endpoints
 
