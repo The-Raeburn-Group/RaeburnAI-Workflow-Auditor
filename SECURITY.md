@@ -17,6 +17,9 @@ Include:
 
 ## Security design principles
 
+- Built-in login and registration are implemented.
+- Credentials are stored as bcrypt hashes.
+- Sessions are signed and stored in HTTP-only cookies.
 - Documents are processed in-memory by default during parsing.
 - Raw customer documents must not be logged.
 - Request payloads are validated with Zod.
@@ -26,8 +29,7 @@ Include:
 - RBAC supports owner, admin, auditor and viewer roles.
 - Saved audit reads and writes are tenant-scoped by organisation ID.
 - Source text is hashed before being persisted as metadata.
-- Structured logs redact keys, secrets, tokens, passwords and document-like fields.
-- Human approval is required for external actions and high-risk workflow changes.
+- Structured logs redact sensitive field names.
 - Secrets must be managed through environment variables or deployment secret stores.
 - Runtime containers use a non-root user.
 
@@ -37,6 +39,6 @@ The auditor provides directional operational analysis. Users must validate savin
 
 ## Known security TODOs
 
-- Replace the upstream-auth header seam with first-party Auth.js, Clerk or enterprise SSO before public SaaS launch.
 - Add durable audit-event table writes for every security-sensitive operation.
 - Add row-level security policies if deploying on Supabase or shared Postgres infrastructure.
+- Add account-management UI for inviting users and changing roles.
