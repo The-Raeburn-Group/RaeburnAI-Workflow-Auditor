@@ -5,6 +5,7 @@ import { AuthError, requireRole, requireUser } from '@/lib/auth';
 import { createTextDigest } from '@/lib/hash';
 import { getAudit, listAudits, saveAudit } from '@/lib/database';
 import { logger } from '@/lib/logger';
+import { recordAuditEvent } from '@/lib/audit-log';
 
 export const runtime = 'nodejs';
 
@@ -27,10 +28,23 @@ export async function GET(request: Request) {
     if (auditId) {
       const audit = await getAudit(user.organisationId, auditId);
       if (!audit) return NextResponse.json({ error: 'Audit not found' }, { status: 404 });
+      await recordAuditEvent({
+        actor: user.id,
+        organisationId: user.organisationId,
+        action: 'audit.read',
+        resourceType: 'audit',
+        resourceId: auditId
+      });
       return NextResponse.json({ audit });
     }
 
     const audits = await listAudits(user.organisationId);
+    await recordAuditEvent({
+      actor: user.id,
+      organisationId: user.organisationId,
+      action: 'audit.list',
+      resourceType: 'audit'
+    });
     return NextResponse.json({ audits });
   } catch (error) {
     return handleAuditApiError(error);
@@ -60,6 +74,16 @@ export async function POST(request: Request) {
       auditId: saved?.id || null,
       organisationId: user.organisationId,
       actor: user.id
+    });
+
+    await recordAuditEvent({
+      actor: user.id,
+      organisationId: user.organisationId,
+      action: 'audit.created',
+      resourceType: 'audit',
+      resourceId: saved?.id || null,
+      requestId,
+      metadata: { title: body.title, sourceType: body.sourceType }
     });
 
     return NextResponse.json({ id: saved?.id, result, requestId }, { status: 201 });
