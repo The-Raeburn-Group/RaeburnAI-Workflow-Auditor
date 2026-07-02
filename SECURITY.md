@@ -17,11 +17,15 @@ Include:
 
 ## Security design principles
 
-- Documents are processed in-memory by default.
+- Documents are processed in-memory by default during parsing.
 - Raw customer documents must not be logged.
 - Request payloads are validated with Zod.
 - AI output is schema-validated before use.
-- Rate limiting is applied to the audit endpoint.
+- Rate limiting is applied to audit and upload endpoints.
+- Saved audit APIs require authenticated user context.
+- RBAC supports owner, admin, auditor and viewer roles.
+- Saved audit reads and writes are tenant-scoped by organisation ID.
+- Source text is hashed before being persisted as metadata.
 - Structured logs redact keys, secrets, tokens, passwords and document-like fields.
 - Human approval is required for external actions and high-risk workflow changes.
 - Secrets must be managed through environment variables or deployment secret stores.
@@ -33,6 +37,6 @@ The auditor provides directional operational analysis. Users must validate savin
 
 ## Known security TODOs
 
-- Add authentication and RBAC before saving audits or supporting teams.
-- Add tenant-isolated persistence before multi-user SaaS deployment.
-- Add durable audit event storage once sensitive write actions are introduced.
+- Replace the upstream-auth header seam with first-party Auth.js, Clerk or enterprise SSO before public SaaS launch.
+- Add durable audit-event table writes for every security-sensitive operation.
+- Add row-level security policies if deploying on Supabase or shared Postgres infrastructure.
