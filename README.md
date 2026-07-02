@@ -43,11 +43,14 @@ The platform is designed as a connected ecosystem rather than a set of unrelated
 - Signed JWT sessions in HTTP-only cookies
 - Password hashing with bcrypt
 - Auth/RBAC with owner, admin, auditor and viewer roles
+- Account invite and role-management UI
+- Durable audit-event writes to Postgres
 - Formal migration runner with tracked SQL migrations
 - Saved audits through Postgres persistence
 - Tenant-scoped audit list/get/create APIs
 - AI automation opportunity scoring and savings estimates
 - Three-phase implementation roadmap
+- Playwright browser E2E tests
 - CI, CodeQL, dependency audit and Docker build checks
 
 ## 6. Architecture
@@ -55,20 +58,20 @@ The platform is designed as a connected ecosystem rather than a set of unrelated
 ```text
 Document upload or pasted workflow text
         ↓
-Next.js UI + /auth workspace login
+Next.js UI + /auth + /account
         ↓
 /api/audit or authenticated /api/audits
         ↓
 Validation + rate limiting + request ID
         ↓
-JWT session verification + RBAC for saved audits
+JWT session verification + RBAC
         ↓
 AI provider or fallback auditor
         ↓
-Dashboard + optional Postgres saved audit record
+Dashboard + Postgres saved audits + durable audit events
 ```
 
-Core modules include `app/auth/page.tsx`, `components/auth-panel.tsx`, `app/api/auth/*`, `app/api/audits/route.ts`, `lib/auth.ts`, `lib/database.ts`, `scripts/migrate.ts`, and `db/migrations`.
+Core modules include `app/auth/page.tsx`, `app/account/page.tsx`, `components/auth-panel.tsx`, `components/account-management-panel.tsx`, `app/api/auth/*`, `app/api/account/*`, `app/api/audits/route.ts`, `lib/auth.ts`, `lib/audit-log.ts`, `lib/database.ts`, `scripts/migrate.ts`, and `db/migrations`.
 
 ## 7. Quick start
 
@@ -82,7 +85,7 @@ npm run db:seed
 npm run dev
 ```
 
-Open `http://localhost:3000` for audits or `http://localhost:3000/auth` for login.
+Open `http://localhost:3000` for audits, `http://localhost:3000/auth` for login, or `http://localhost:3000/account` for role management.
 
 ## 8. Environment variables
 
@@ -97,7 +100,7 @@ Open `http://localhost:3000` for audits or `http://localhost:3000/auth` for logi
 
 ## 9. Usage examples
 
-Paste content from `examples/customer-support-sop.txt`, upload PDF/DOCX/CSV/TXT/Markdown through the UI, or create a workspace at `/auth` and save audits through `/api/audits`.
+Paste content from `examples/customer-support-sop.txt`, upload PDF/DOCX/CSV/TXT/Markdown through the UI, create a workspace at `/auth`, manage roles at `/account`, and save audits through `/api/audits`.
 
 ## 10. Security model
 
@@ -110,29 +113,32 @@ Paste content from `examples/customer-support-sop.txt`, upload PDF/DOCX/CSV/TXT/
 - Saved audit APIs require authenticated user context and RBAC.
 - Saved audits are tenant-scoped by organisation ID.
 - Source text is stored as a hash, not raw document text, in audit metadata.
+- Security-sensitive account and audit actions write durable audit events.
 - CodeQL and dependency audit run in CI.
 
 ## 11. Production readiness
 
-Current readiness: **94/100**.
+Current readiness: **97/100**.
 
 Implemented:
 
 - first-party login/register UI
 - signed JWT cookie sessions
 - bcrypt password hashing
-- auth/RBAC foundation
+- account invite and role-management UI
+- durable audit-event writes
+- Playwright browser E2E tests
 - formal migration runner
 - Postgres database schema and persistence layer
 - saved audit APIs
 - real PDF, DOCX, CSV and text upload parsing
 - CI quality gate, CodeQL, dependency audit and Docker build workflow
 
-Not yet complete:
+Remaining improvements:
 
-- full browser E2E with Playwright
-- account-management UI for inviting users and changing roles
-- durable audit-event table writes for every security-sensitive operation
+- invite acceptance email delivery provider
+- advanced account lifecycle controls such as suspend/delete user
+- optional enterprise SSO
 
 ## 12. Roadmap
 
@@ -146,6 +152,7 @@ Before opening a PR, run:
 
 ```bash
 npm run ci
+npm run test:browser
 ```
 
 ## 14. Licence
