@@ -70,6 +70,74 @@ export async function createOrganisationWithOwner(input: {
   });
 }
 
+export async function listOrganisationUsers(organisationId: string) {
+  const sql = getDatabase();
+  return sql`
+    select id, email, name, role, created_at
+    from users
+    where organisation_id = ${organisationId}
+    order by created_at asc
+  `;
+}
+
+export async function updateOrganisationUserRole(input: {
+  organisationId: string;
+  userId: string;
+  role: Exclude<Role, 'owner'>;
+}) {
+  const sql = getDatabase();
+  const rows = await sql`
+    update users
+    set role = ${input.role}
+    where organisation_id = ${input.organisationId}
+      and id = ${input.userId}
+      and role <> 'owner'
+    returning id, email, name, role, created_at
+  `;
+  return rows[0] || null;
+}
+
+export async function createInvitation(input: {
+  organisationId: string;
+  email: string;
+  role: Exclude<Role, 'owner'>;
+  invitedBy: string;
+  tokenHash: string;
+  expiresAt: Date;
+}) {
+  const sql = getDatabase();
+  const rows = await sql`
+    insert into invitations (organisation_id, email, role, invited_by, token_hash, expires_at)
+    values (${input.organisationId}, ${input.email}, ${input.role}, ${input.invitedBy}, ${input.tokenHash}, ${input.expiresAt})
+    on conflict (organisation_id, email)
+    do update set role = excluded.role, invited_by = excluded.invited_by, token_hash = excluded.token_hash, expires_at = excluded.expires_at, accepted_at = null
+    returning id, email, role, expires_at, created_at
+  `;
+  return rows[0];
+}
+
+export async function listInvitations(organisationId: string) {
+  const sql = getDatabase();
+  return sql`
+    select id, email, role, accepted_at, expires_at, created_at
+    from invitations
+    where organisation_id = ${organisationId}
+    order by created_at desc
+    limit 100
+  `;
+}
+
+export async function listAuditEvents(organisationId: string) {
+  const sql = getDatabase();
+  return sql`
+    select id, actor_id, action, resource_type, resource_id, metadata, created_at
+    from audit_events
+    where organisation_id = ${organisationId}
+    order by created_at desc
+    limit 100
+  `;
+}
+
 export type SavedAuditInput = {
   organisationId: string;
   createdBy: string;
