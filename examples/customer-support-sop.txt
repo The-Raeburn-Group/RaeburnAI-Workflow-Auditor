@@ -1,0 +1,18 @@
+Customer Support SOP
+
+1. Agent checks shared inbox every 30 minutes.
+2. Agent copies customer name, email, order number and issue type into CRM.
+3. Agent searches order system manually.
+4. Agent sends a templated status update message.
+5. Refund requests above a set threshold are escalated to a manager.
+6. Agent updates a spreadsheet for weekly reporting.
+
+Frequency: 120 tickets per week.
+Average handling time: 12 minutes.
+Fully loaded hourly cost: 28 GBP.
+
+Known issues:
+- duplicate data entry
+- inconsistent tagging
+- slow refund approval
+- management reports prepared manually
