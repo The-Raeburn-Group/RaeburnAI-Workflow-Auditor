@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 
 type User = { id: string; email: string; name: string | null; role: string; created_at: string };
 type Invitation = { id: string; email: string; role: string; accepted_at: string | null; expires_at: string; created_at: string };
@@ -137,7 +138,7 @@ export function AccountManagementPanel() {
   );
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-6">
       <h2 className="text-2xl font-bold">{title}</h2>
