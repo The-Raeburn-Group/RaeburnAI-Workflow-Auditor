@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { AuditorForm } from '@/components/auditor-form';
 import { BadgeCheck, FileText, Gauge, Route, ShieldCheck, Sparkles } from 'lucide-react';
 
@@ -24,6 +25,14 @@ export default function Home() {
           <p className="mt-6 text-xl leading-8 text-slate-300">
             The Lighthouse for AI adoption. Upload process documents and receive a practical audit showing what to automate, what it could save, what risks to manage, and what to implement first.
           </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link href="/auth" className="rounded-xl bg-cyan-300 px-6 py-3 text-center font-semibold text-slate-950 transition hover:bg-cyan-200">
+              Login or create workspace
+            </Link>
+            <a href="#workflow" className="rounded-xl bg-white/10 px-6 py-3 text-center font-semibold text-white transition hover:bg-white/20">
+              Run stateless audit
+            </a>
+          </div>
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {features.map(([title, description, Icon]) => (
               <div key={title as string} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-cyan-950/20">
