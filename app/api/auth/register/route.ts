@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { createOrganisationWithOwner, findUserByEmail } from '@/lib/database';
 import { createSessionToken, setSessionCookie } from '@/lib/auth';
 import { logger } from '@/lib/logger';
+import { recordAuditEvent } from '@/lib/audit-log';
 
 export const runtime = 'nodejs';
 
@@ -42,6 +43,14 @@ export async function POST(request: Request) {
     setSessionCookie(token);
 
     logger.info('user_registered', { requestId, userId: user.id, organisationId: user.organisation_id });
+    await recordAuditEvent({
+      actor: user.id,
+      organisationId: user.organisation_id,
+      action: 'auth.registered',
+      resourceType: 'user',
+      resourceId: user.id,
+      requestId
+    });
 
     return NextResponse.json({
       user: {
