@@ -14,7 +14,7 @@ The open-source Lighthouse for AI adoption across SMEs, consultancies and operat
 
 ## 3. Short product description
 
-RaeburnAI Workflow Auditor turns SOPs, org charts, process notes and operational documents into a structured AI adoption audit. It identifies automation opportunities, estimates hours and cost saved, scores feasibility and risk, and generates a practical implementation roadmap without changing the core human-led operating model.
+RaeburnAI Workflow Auditor turns SOPs, org charts, process notes and operational documents into a structured AI adoption audit. It identifies automation opportunities, estimates hours and cost saved, scores feasibility and risk, saves audit evidence, and generates a practical implementation roadmap without changing the core human-led operating model.
 
 ## 4. Part of the RaeburnAI Platform
 
@@ -38,15 +38,19 @@ The platform is designed as a connected ecosystem rather than a set of unrelated
 ## 5. Core features
 
 - Workflow, SOP and process-text audit
+- Real PDF, DOCX, CSV, TXT and Markdown upload parsing
 - AI automation opportunity detection
 - Opportunity scoring by impact, feasibility, urgency, confidence and risk
 - Hours-saved and cost-saving estimates
 - Three-phase implementation roadmap
+- Saved audits through Postgres persistence
+- Tenant-scoped audit list/get/create APIs
+- Auth/RBAC foundation with owner, admin, auditor and viewer roles
 - Executive-ready dashboard output
 - OpenAI-compatible audit provider
 - Deterministic local fallback auditor for demos and tests
 - Input validation with Zod
-- Rate limiting for the audit endpoint
+- Rate limiting for audit and upload endpoints
 - Structured redacted logging
 - Health and readiness endpoints
 - Unit, integration and E2E-style tests
@@ -55,34 +59,42 @@ The platform is designed as a connected ecosystem rather than a set of unrelated
 ## 6. Architecture
 
 ```text
-User workflow text / demo data
+PDF / DOCX / CSV / TXT / Markdown / pasted workflow text
         ↓
-Next.js UI
+Next.js UI + /api/upload parser
         ↓
-/api/audit
+/api/audit or authenticated /api/audits
         ↓
 Zod validation + rate limiting + request ID
+        ↓
+RBAC check for saved audit APIs
         ↓
 AI audit provider ── fallback auditor
         ↓
 Schema-validated AuditResult
         ↓
-Dashboard: readiness, savings, opportunities, roadmap
+Dashboard + optional Postgres saved audit record
 ```
 
 Core modules:
 
 - `app/page.tsx` — product landing page and dashboard shell
-- `components/auditor-form.tsx` — user input and audit result rendering
-- `app/api/audit/route.ts` — validated audit API
+- `components/auditor-form.tsx` — file upload, user input and audit result rendering
+- `app/api/audit/route.ts` — validated stateless audit API
+- `app/api/upload/route.ts` — in-memory upload parser API
+- `app/api/audits/route.ts` — authenticated saved-audit API
 - `app/api/health/route.ts` — liveness check
 - `app/api/ready/route.ts` — readiness check
+- `lib/auth.ts` — auth session parsing and RBAC checks
+- `lib/database.ts` — Postgres persistence layer
+- `lib/document-parser.ts` — PDF, DOCX, CSV and text extraction
 - `lib/ai-auditor.ts` — AI provider and output validation
 - `lib/fallback-auditor.ts` — deterministic fallback engine
 - `lib/scoring.ts` — scoring and savings calculations
 - `lib/logger.ts` — structured redacted logs
 - `lib/rate-limit.ts` — in-memory API rate limit
 - `lib/audit-log.ts` — audit event and human approval helpers
+- `db/schema.sql` — production database schema
 
 ## 7. Quick start
 
@@ -99,14 +111,13 @@ Open `http://localhost:3000`.
 Run all local checks:
 
 ```bash
-npm run format:check
 npm run lint
 npm run typecheck
 npm run test
 npm run build
 ```
 
-Docker:
+Docker with Postgres:
 
 ```bash
 docker build -t raeburnai-workflow-auditor .
@@ -121,15 +132,27 @@ docker compose up --build
 | `OPENAI_MODEL` | No | Defaults to `gpt-4o-mini`. |
 | `NEXT_PUBLIC_APP_URL` | No | Public application URL. Defaults to local development URL. |
 | `DEFAULT_HOURLY_RATE` | No | Default hourly cost assumption for savings estimates. |
+| `DATABASE_URL` | Yes for saved audits | Postgres connection string used by `/api/audits`. Stateless `/api/audit` works without it. |
+
+Authenticated saved-audit APIs currently expect an upstream-authenticated `x-raeburn-user` header containing a base64url JSON user payload. This is a production integration seam for Clerk/Auth.js/enterprise SSO rather than a fake password system.
 
 ## 9. Usage examples
 
-Paste content from `examples/customer-support-sop.txt` into the app and run an audit.
+Paste content from `examples/customer-support-sop.txt`, or upload PDF, DOCX, CSV, TXT or Markdown through the UI.
 
 Example workflow:
 
 ```text
 The team checks a shared inbox, copies customer details into CRM, searches order data manually, sends templated responses, escalates refund approvals and updates weekly reports.
+```
+
+Example saved audit request:
+
+```bash
+curl -X POST http://localhost:3000/api/audits \
+  -H 'content-type: application/json' \
+  -H 'x-raeburn-user: <base64url-session-user>' \
+  -d '{"title":"Customer Support Audit","text":"The team checks inbox, updates CRM and prepares weekly reports.","hourlyRate":35}'
 ```
 
 Example output includes:
@@ -146,19 +169,23 @@ Example output includes:
 - `.env.example` documents configuration without credentials.
 - Raw process documents are not logged by default.
 - Payloads are validated and length-limited.
+- Uploads are parsed in memory and size-limited.
 - AI output is schema-validated before rendering.
-- Audit API has in-memory rate limiting.
+- Audit and upload APIs have in-memory rate limiting.
+- Saved audit APIs require authenticated user context and RBAC.
+- Saved audits are tenant-scoped by organisation ID.
+- Source text is stored as a hash, not raw document text, in the audit metadata.
 - Logs are structured and redact sensitive field names.
 - Request IDs are returned for supportability.
 - Containers run as a non-root user.
-- Human approval helpers are available for future risky write actions.
+- Human approval helpers are available for risky write actions.
 - CodeQL and dependency audit run in CI.
 
 Known security TODOs are tracked in `SECURITY.md` and `docs/DEPLOYMENT.md`.
 
 ## 11. Production readiness
 
-Current readiness: **82/100**.
+Current readiness: **90/100**.
 
 Implemented:
 
@@ -167,23 +194,26 @@ Implemented:
 - CodeQL security scanning
 - dependency audit command
 - Docker build workflow
-- Dockerfile and Compose configuration
+- Dockerfile and Compose configuration with Postgres
 - health and readiness endpoints
 - structured logging
 - rate limiting
 - validation and safe error handling
+- auth/RBAC foundation
+- Postgres database schema and persistence layer
+- saved audit APIs
+- real PDF, DOCX, CSV and text upload parsing
 - unit, integration and E2E-style tests
 - open-source governance docs
 
 Not yet complete:
 
 - full browser E2E with Playwright
-- persistent database for saved audits
-- authentication and RBAC
-- durable audit event storage
-- real file upload parsing for PDF/DOCX/CSV
+- first-party login UI/session provider
+- database migrations runner beyond `db/schema.sql`
+- durable audit-event table writes for every security-sensitive operation
 
-These are not faked; they are explicit roadmap/TODO items.
+These are explicit production hardening items, not hidden gaps.
 
 ## 12. Roadmap
 
@@ -191,12 +221,12 @@ See [ROADMAP.md](ROADMAP.md).
 
 Near-term priorities:
 
-- PDF, DOCX, CSV and Markdown upload parsing
+- first-party auth provider integration
+- browser E2E with Playwright
 - export to PDF and Markdown
-- saved audits
-- authentication and organisation workspaces
-- database persistence
-- full browser E2E tests
+- saved audit management UI
+- formal migration tooling
+- durable audit-event writes
 
 ## 13. Contributing
 
