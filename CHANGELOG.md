@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.3.0 - 2026-07-02
+
+### Added
+
+- Playwright browser E2E test framework.
+- Browser coverage for audit flow, auth page and account management page.
+- CI browser E2E job with Chromium installation.
+- Account management page at `/account`.
+- User invitation API and UI.
+- Role update API and UI.
+- Durable audit-event writes to Postgres.
+- Durable audit-event review API and UI.
+- Invitation database schema and migration.
+
+### Changed
+
+- Auth, account and saved-audit actions now write durable security events.
+- README, SECURITY and ROADMAP updated to remove the final blockers.
+
 ## 1.2.0 - 2026-07-02
 
 ### Added
@@ -50,7 +69,3 @@
 - Unit, integration and E2E-style tests.
 - Demo workflow data.
 - Security, contributing, roadmap and deployment documentation.
-
-### Known limitations
-
-- Browser E2E is represented by an E2E-style business-flow test until Playwright is added.
