@@ -87,6 +87,22 @@ npm run dev
 
 Open `http://localhost:3000` for audits, `http://localhost:3000/auth` for login, or `http://localhost:3000/account` for role management.
 
+Deployment checks:
+
+```bash
+npm install
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+npx playwright install chromium
+npm run test:browser
+docker build -t raeburnai-workflow-auditor .
+docker compose up --build
+```
+
+Production deployment is documented in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). The standard deployment path is: provision Postgres, set `DATABASE_URL` and `AUTH_SECRET`, run `npm run db:migrate`, then deploy via Vercel, Docker, or Docker Compose.
+
 ## 8. Environment variables
 
 | Variable | Required | Description |
@@ -151,8 +167,8 @@ Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 Before opening a PR, run:
 
 ```bash
+npx playwright install chromium
 npm run ci
-npm run test:browser
 ```
 
 ## 14. Licence
