@@ -18,7 +18,7 @@ const createAuditSchema = z.object({
 
 export async function GET(request: Request) {
   try {
-    const user = requireUser(request);
+    const user = await requireUser(request);
     requireRole(user, 'viewer');
 
     const url = new URL(request.url);
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   const requestId = crypto.randomUUID();
 
   try {
-    const user = requireUser(request);
+    const user = await requireUser(request);
     requireRole(user, 'auditor');
     const body = createAuditSchema.parse(await request.json());
     const result = await auditWorkflow(body.text, body.hourlyRate);
@@ -78,5 +78,5 @@ function handleAuditApiError(error: unknown, requestId?: string) {
   }
 
   logger.error('saved_audit_api_failed', { requestId: requestId || null });
-  return NextResponse.json({ error: 'Unable to process saved audit request', requestId }, { status: 500 });
+  return NextResponse.json({ error: 'Unable to process request', requestId }, { status: 500 });
 }
