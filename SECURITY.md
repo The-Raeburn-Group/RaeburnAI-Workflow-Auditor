@@ -27,8 +27,10 @@ Include:
 - Rate limiting is applied to audit and upload endpoints.
 - Saved audit APIs require authenticated user context.
 - RBAC supports owner, admin, auditor and viewer roles.
+- Account invite and role-management APIs require admin access.
 - Saved audit reads and writes are tenant-scoped by organisation ID.
 - Source text is hashed before being persisted as metadata.
+- Security-sensitive auth, account and audit actions write durable audit events.
 - Structured logs redact sensitive field names.
 - Secrets must be managed through environment variables or deployment secret stores.
 - Runtime containers use a non-root user.
@@ -39,6 +41,6 @@ The auditor provides directional operational analysis. Users must validate savin
 
 ## Known security TODOs
 
-- Add durable audit-event table writes for every security-sensitive operation.
 - Add row-level security policies if deploying on Supabase or shared Postgres infrastructure.
-- Add account-management UI for inviting users and changing roles.
+- Add advanced account lifecycle actions such as suspend and delete user.
+- Add enterprise SSO as an optional deployment mode.
