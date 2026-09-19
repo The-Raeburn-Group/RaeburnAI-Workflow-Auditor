@@ -18,7 +18,6 @@ export function AccountManagementPanel() {
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    setError(null);
     const [usersResponse, eventsResponse] = await Promise.all([
       fetch('/api/account/users'),
       fetch('/api/account/audit-events')
