@@ -1,4 +1,4 @@
-import pdfParse from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 import mammoth from 'mammoth';
 import { parse } from 'csv-parse/sync';
 
@@ -21,8 +21,13 @@ export async function parseUploadedFile(file: File): Promise<ParsedDocument> {
   const mimeType = file.type || inferMimeType(filename);
 
   if (mimeType === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) {
-    const parsed = await pdfParse(buffer);
-    return normalise({ filename, mimeType, text: parsed.text, sourceType: 'pdf' });
+    const parser = new PDFParse({ data: buffer });
+    try {
+      const parsed = await parser.getText();
+      return normalise({ filename, mimeType, text: parsed.text, sourceType: 'pdf' });
+    } finally {
+      await parser.destroy();
+    }
   }
 
   if (
