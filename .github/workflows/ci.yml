@@ -9,51 +9,143 @@ on:
 permissions:
   contents: read
   security-events: write
+  actions: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          node-version: 20
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.23.2'
           cache: npm
-      - run: npm install
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test
-      - run: npm run build
-      - run: npm run audit:deps
+
+      - name: Install deterministic dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Enforce reusable RAI-112 policy
+        uses: ./.github/actions/rai112-policy
+        with:
+          profile: application
+
+      - name: High/Critical dependency audit
+        run: npm audit --audit-level=high
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm run test
+
+      - name: Production build
+        run: npm run build
 
   browser-e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          node-version: 20
-          cache: npm
-      - run: npm install
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
+          persist-credentials: false
 
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          context: .
-          push: false
-          tags: raeburnai-workflow-auditor:ci
+          node-version: '22.23.2'
+          cache: npm
+
+      - name: Install deterministic dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Install pinned Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        run: npm run test:browser
 
   codeql:
+    name: CodeQL
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Initialise CodeQL
+        uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81
         with:
           languages: javascript-typescript
-      - uses: github/codeql-action/analyze@v3
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81
+
+  docker:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Build exact-SHA production image
+        run: docker build -t raeburnai-workflow-auditor:${{ github.sha }} .
+
+      - name: Scan production image for High/Critical vulnerabilities
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8
+        with:
+          image-ref: raeburnai-workflow-auditor:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+
+      - name: Smoke-test exact image health endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          id="$(docker run -d -p 127.0.0.1:3000:3000             -e AUTH_SECRET=rai112-runtime-smoke-secret-with-more-than-32-chars             -e NEXT_PUBLIC_APP_URL=http://127.0.0.1:3000             raeburnai-workflow-auditor:${{ github.sha }})"
+          trap 'docker logs "$id" || true; docker rm -f "$id" >/dev/null 2>&1 || true' EXIT
+          for attempt in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:3000/api/health | grep -q '"status":"ok"'; then
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Reject newly introduced High/Critical dependencies
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
+        with:
+          fail-on-severity: high
