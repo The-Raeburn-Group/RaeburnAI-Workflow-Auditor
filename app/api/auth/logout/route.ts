@@ -19,6 +19,6 @@ export async function POST() {
     });
   }
 
-  clearSessionCookie();
+  await clearSessionCookie();
   return NextResponse.json({ ok: true, requestId });
 }

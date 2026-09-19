@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { AuditorForm } from '@/components/auditor-form';
 import { BadgeCheck, FileText, Gauge, Route, ShieldCheck, Sparkles } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-const features = [
+const features: Array<[string, string, LucideIcon]> = [
   ['Upload messy process docs', 'SOPs, org charts, policies, notes and process descriptions.', FileText],
   ['Find AI opportunities', 'Score automation ideas by impact, feasibility, risk and confidence.', Sparkles],
   ['Estimate savings', 'Turn repetitive work into hours, cost and ROI calculations.', Gauge],
@@ -35,7 +36,7 @@ export default function Home() {
           </div>
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {features.map(([title, description, Icon]) => (
-              <div key={title as string} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-cyan-950/20">
+              <div key={title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-cyan-950/20">
                 <Icon className="mb-4 h-6 w-6 text-cyan-300" />
                 <h2 className="font-semibold text-white">{title}</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-400">{description}</p>

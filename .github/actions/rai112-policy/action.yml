@@ -1,0 +1,19 @@
+name: RAI-112 supply-chain policy
+description: Validate a checked-out repository against the versioned RaeburnAI RAI-112 software supply-chain baseline.
+inputs:
+  root:
+    description: Repository root relative to GITHUB_WORKSPACE.
+    required: false
+    default: .
+  profile:
+    description: Policy profile; application or release.
+    required: false
+    default: application
+runs:
+  using: composite
+  steps:
+    - name: Validate RAI-112 supply-chain policy
+      shell: bash
+      run: |
+        set -euo pipefail
+        node "${{ github.action_path }}/../../../scripts/validate-rai112-policy.mjs"           "$GITHUB_WORKSPACE/${{ inputs.root }}"           --profile "${{ inputs.profile }}"

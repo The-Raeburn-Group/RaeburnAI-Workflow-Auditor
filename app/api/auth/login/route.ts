@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       organisationId: user.organisation_id,
       role: user.role
     });
-    setSessionCookie(token);
+    await setSessionCookie(token);
 
     logger.info('user_logged_in', { requestId, userId: user.id, organisationId: user.organisation_id });
     await recordAuditEvent({

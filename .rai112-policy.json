@@ -1,0 +1,7 @@
+{
+  "profile": "application",
+  "containerRequired": true,
+  "runtimeSmokeRequired": true,
+  "codeqlRequired": true,
+  "releaseTrustRequired": false
+}

@@ -46,10 +46,20 @@ export function AuthPanel() {
     <section className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
       <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-6 shadow-2xl shadow-cyan-950/30">
         <div className="mb-6 flex gap-3">
-          <button className={`rounded-xl px-4 py-2 font-semibold ${mode === 'login' ? 'bg-cyan-300 text-slate-950' : 'bg-white/10 text-slate-200'}`} onClick={() => setMode('login')}>
+          <button
+            type="button"
+            aria-pressed={mode === 'login'}
+            className={`rounded-xl px-4 py-2 font-semibold ${mode === 'login' ? 'bg-cyan-300 text-slate-950' : 'bg-white/10 text-slate-200'}`}
+            onClick={() => setMode('login')}
+          >
             Login
           </button>
-          <button className={`rounded-xl px-4 py-2 font-semibold ${mode === 'register' ? 'bg-cyan-300 text-slate-950' : 'bg-white/10 text-slate-200'}`} onClick={() => setMode('register')}>
+          <button
+            type="button"
+            aria-pressed={mode === 'register'}
+            className={`rounded-xl px-4 py-2 font-semibold ${mode === 'register' ? 'bg-cyan-300 text-slate-950' : 'bg-white/10 text-slate-200'}`}
+            onClick={() => setMode('register')}
+          >
             Register workspace
           </button>
         </div>

@@ -18,7 +18,6 @@ export function AccountManagementPanel() {
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    setError(null);
     const [usersResponse, eventsResponse] = await Promise.all([
       fetch('/api/account/users'),
       fetch('/api/account/audit-events')
@@ -40,7 +39,38 @@ export function AccountManagementPanel() {
   }
 
   useEffect(() => {
-    void load();
+    let cancelled = false;
+
+    void (async () => {
+      const [usersResponse, eventsResponse] = await Promise.all([
+        fetch('/api/account/users'),
+        fetch('/api/account/audit-events')
+      ]);
+
+      if (cancelled) return;
+
+      if (usersResponse.ok) {
+        const payload = await usersResponse.json();
+        if (!cancelled) {
+          setUsers(payload.users || []);
+          setInvitations(payload.invitations || []);
+        }
+      } else {
+        const payload = await usersResponse.json().catch(() => ({}));
+        if (!cancelled) {
+          setError(payload.error || 'Unable to load users. Login as an admin or owner.');
+        }
+      }
+
+      if (eventsResponse.ok) {
+        const payload = await eventsResponse.json();
+        if (!cancelled) setEvents(payload.events || []);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function invite() {

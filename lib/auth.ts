@@ -70,7 +70,8 @@ export async function requireUser(request: Request): Promise<SessionUser> {
 }
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
-  const token = cookies().get(sessionCookieName)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(sessionCookieName)?.value;
   if (!token) return null;
 
   try {
@@ -80,8 +81,9 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   }
 }
 
-export function setSessionCookie(token: string) {
-  cookies().set(sessionCookieName, token, {
+export async function setSessionCookie(token: string) {
+  const cookieStore = await cookies();
+  cookieStore.set(sessionCookieName, token, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
@@ -90,8 +92,9 @@ export function setSessionCookie(token: string) {
   });
 }
 
-export function clearSessionCookie() {
-  cookies().delete(sessionCookieName);
+export async function clearSessionCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete(sessionCookieName);
 }
 
 export function requireRole(user: SessionUser, minimumRole: Role) {
