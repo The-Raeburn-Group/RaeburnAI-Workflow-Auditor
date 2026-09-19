@@ -1,0 +1,26 @@
+{
+  "id": "RAI-112",
+  "version": "2026-09-19",
+  "description": "RaeburnAI software supply-chain baseline",
+  "controls": {
+    "immutableThirdPartyActions": true,
+    "deterministicDependencyLock": true,
+    "highCriticalDependencyAudit": true,
+    "codeql": true,
+    "digestPinnedContainerBases": true,
+    "highCriticalContainerScan": true,
+    "liveRuntimeSmokeTest": true,
+    "singleOwnerReleaseTrustWhenRequired": true
+  },
+  "releaseTrustMarkers": [
+    "git archive --format=tar",
+    "gzip -n",
+    "SHA256SUMS",
+    "spdx-json",
+    "cyclonedx-json",
+    "cosign sign-blob",
+    "cosign verify-blob",
+    "actions/attest@",
+    "gh attestation verify"
+  ]
+}
