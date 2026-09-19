@@ -31,6 +31,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          rm -f package-lock.json
           npm install --package-lock-only --ignore-scripts --no-audit
 
       - name: Commit npm lock
