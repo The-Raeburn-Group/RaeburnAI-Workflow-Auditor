@@ -21,7 +21,8 @@
     "audit:deps": "npm audit --audit-level=high",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
-    "ci": "npm run lint && npm run typecheck && npm run test && npm run build && npm run test:browser"
+    "ci": "npm run lint && npm run typecheck && npm run test && npm run build && npm run test:browser",
+    "validate:rai112": "node scripts/validate-rai112-policy.mjs ."
   },
   "dependencies": {
     "@hookform/resolvers": "3.9.0",
